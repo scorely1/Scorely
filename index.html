@@ -79,6 +79,7 @@ footer .wrap{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script>
+
 (function(){
 var h=React.createElement,useState=React.useState,useEffect=React.useEffect;
 var API='https://sportscore.com/api/v1/fixtures/?sport=football&limit=200';
@@ -142,33 +143,66 @@ function Match(p){
  h('span',{className:'sc'},h('span',{className:hw?'w':'lo'},played?m.hs:'–'),h('span',{className:aw?'w':'lo'},played?m.as:'–'))),detail)
 }
 function App(){
- var a=useState('t'),day=a[0],setDay=a[1],b=useState('all'),filter=b[0],setFilter=b[1],c=useState(null),open=c[0],setOpen=c[1],d=useState(false),menu=d[0],setMenu=d[1],e=useState({}),data=e[0],setData=e[1],f=useState(false),loading=f[0],setLoading=f[1],g=useState(''),error=g[0],setError=g[1],j=useState(0),refresh=j[1];
+ var a=useState('t'),day=a[0],setDay=a[1];
+ var b=useState('all'),filter=b[0],setFilter=b[1];
+ var c=useState(null),open=c[0],setOpen=c[1];
+ var d=useState(false),menu=d[0],setMenu=d[1];
+ var e=useState({}),data=e[0],setData=e[1];
+ var f=useState(false),loading=f[0],setLoading=f[1];
+ var g=useState(''),error=g[0],setError=g[1];
+ var matches=data[day]||[];
+ var liveList=[];
+ DAYS.forEach(function(di){(data[di.id]||[]).forEach(function(m){if(m.status.kind==='live')liveList.push(m)})});
+ var grouped={};
+ matches.forEach(function(m){var L=m.league;if(!grouped[L.id])grouped[L.id]={league:L,matches:[]};grouped[L.id].matches.push(m)});
+ var groups=Object.keys(grouped).map(function(k){return grouped[k]}).filter(function(group){return filter==='all'||filter===group.league.id}).sort(function(x,y){return x.league.n.localeCompare(y.league.n)});
+ var leagueFilters=LEAGUES.filter(function(L){return matches.some(function(m){return m.league.id===L.id})});
+ var allFilters=[{id:'all',n:'All leagues'}].concat(leagueFilters);
  function load(){
   setLoading(true);setError('');
-  Promise.all(DAYS.map(function(dayInfo){var date=utcDate(dayInfo.offset);return fetch(API+'&date='+encodeURIComponent(date),{headers:{Accept:'application/json'}}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(json){var rows=extract(json);if(!Array.isArray(rows))throw new Error('Unexpected API response');return {id:dayInfo.id,matches:rows.map(normalizeMatch).filter(Boolean)}})}))
-  .then(function(results){var next={};results.forEach(function(r){next[r.id]=r.matches});setData(next);setError('');setLoading(false);refresh(function(x){return x+1})})
+  Promise.all(DAYS.map(function(di){
+   var date=utcDate(di.offset);
+   return fetch(API+'&date='+encodeURIComponent(date),{headers:{Accept:'application/json'}})
+    .then(function(response){if(!response.ok)throw new Error('HTTP '+response.status);return response.json()})
+    .then(function(json){var rows=extract(json);if(!Array.isArray(rows))throw new Error('Unexpected API response');return {id:di.id,matches:rows.map(normalizeMatch).filter(Boolean)}})
+  }))
+  .then(function(results){var next={};results.forEach(function(r){next[r.id]=r.matches});setData(next);setLoading(false)})
   .catch(function(err){setError('Could not load fixtures from SportScore. Please try again shortly.');setLoading(false);console.error('SCORELY fixtures error:',err)})
  }
  useEffect(function(){load();var timer=setInterval(load,60000);return function(){clearInterval(timer)}},[]);
- var matches=data[day]||[];
- var liveList=[];DAYS.forEach(function(di){(data[di.id]||[]).forEach(function(m){if(m.status.kind==='live')liveList.push(m)})});
- var grouped={};matches.forEach(function(m){var L=m.league;if(!grouped[L.id])grouped[L.id]={league:L,matches:[]};grouped[L.id].matches.push(m)});
- var groups=Object.keys(grouped).map(function(k){return grouped[k]}).filter(function(g){return filter==='all'||filter===g.league.id}).sort(function(x,y){return x.league.n.localeCompare(y.league.n)});
- var leagueFilters=LEAGUES.filter(function(L){return matches.some(function(m){return m.league.id===L.id})});
- var allFilters=[{id:'all',n:'All leagues'}].concat(leagueFilters);
+ var liveCards=liveList.map(function(m,i){
+  var sides=[m.home,m.away],scores=[m.hs,m.as];
+  var rows=sides.map(function(name,side){return h('div',{className:'lt',key:side},h('span',null,h(Crest,{n:name}),name),h('b',null,scores[side]===null?'–':scores[side]))});
+  return h('div',{className:'lc',key:(m.slug||m.home+m.away)+i},
+   h('div',{style:{display:'flex',justifyContent:'space-between'}},h('small',null,m.competition),h('span',{className:'min'},m.status.label||'LIVE')),rows)
+ });
+ var dayButtons=DAYS.map(function(di){return h('button',{key:di.id,role:'tab','aria-selected':day===di.id,className:day===di.id?'on':'',onClick:function(){setDay(di.id);setOpen(null);setFilter('all')}},di.label,h('small',null,dateLabel(di.offset)))});
+ var filterButtons=allFilters.map(function(L){return h('button',{key:L.id,className:'chip'+(filter===L.id?' on':''),onClick:function(){setFilter(L.id)}},L.n)});
+ var leagueCards=groups.map(function(group){
+  var L=group.league;
+  var rows=group.matches.map(function(m,i){var id=day+L.id+i;return h(Match,{key:id,m:m,open:open===id,onClick:function(){setOpen(open===id?null:id)}})});
+  return h('section',{className:'lg',key:L.id},h('div',{className:'lh'},h('span',{className:'fl'}),h('b',null,L.n),h('small',null,L.c)),rows)
+ });
+ var matchContent;
+ if(error){matchContent=h('div',{className:'empty'},error,h('div',{style:{marginTop:14}},h('button',{className:'chip on',onClick:load},'Retry')))}
+ else if(loading&&!data[day]){matchContent=h('div',{className:'empty'},'Loading real fixtures…')}
+ else if(leagueCards.length){matchContent=h('div',{className:'grid'},leagueCards)}
+ else{matchContent=h('div',{className:'empty'},'No matches found for this date or league. Choose another day.')}
  return h('div',{id:'top'},
- h('header',null,h('div',{className:'wrap hb'},h(Logo),h('button',{className:'burger','aria-label':'Menu','aria-expanded':menu,onClick:function(){setMenu(!menu)}},'☰'),h('nav',{className:menu?'open':'','aria-label':'Main'},['Scores','Fixtures','Tables','News','Teams'].map(function(x,i){return h('a',{key:x,href:'#'+x.toLowerCase(),className:i===0?'on':''},x)})))),
- h('main',{className:'wrap'},h('section',{className:'hero'},h('h1',null,'Every Match. Every Moment.'),h('p',null,'Live scores, fixtures and results from the biggest leagues in world football.')),
- h('section',{'aria-label':'Live matches'},h('div',{className:'sh'},h('span',{className:'dot'}),h('h2',null,'Live now'),h('small',{style:{color:'var(--mut)'}},liveList.length+' matches')),
- liveList.length?h('div',{className:'live'},liveList.map(function(m,i){return h('div',{className:'lc',key:(m.slug||m.home+m.away)+i},h('div',{style:{display:'flex',justifyContent:'space-between'}},h('small',null,m.competition),h('span',{className:'min'},m.status.label||'LIVE')),[0,1].map(function(side){return h('div',{className:'lt',key:side},h('span',null,h(Crest,{n:side?m.away:m.home}),side?m.away:m.home),h('b',null,(side?m.as:m.hs)===null?'–':side?m.as:m.hs))})))}):h('div',{className:'empty'},loading?'Checking live matches…':'No live matches reported right now.')),
- h('section',{className:'sh',style:{marginTop:30}},h('h2',null,'Matches'),h('small',{style:{color:'var(--mut)',marginLeft:'auto'}},'Data refreshes every 60 seconds')),
- h('div',{className:'bar'},h('div',{className:'tabs',role:'tablist'},DAYS.map(function(di){return h('button',{key:di.id,role:'tab','aria-selected':day===di.id,className:day===di.id?'on':'',onClick:function(){setDay(di.id);setOpen(null);setFilter('all')}},di.label,h('small',null,dateLabel(di.offset)))})),
- h('div',{className:'chips'},allFilters.map(function(L){return h('button',{key:L.id,className:'chip'+(filter===L.id?' on':''),onClick:function(){setFilter(L.id)}},L.n)}))),
- error?h('div',{className:'empty'},error,h('div',{style:{marginTop:14}},h('button',{className:'chip on',onClick:load},'Retry'))):
- loading&&!data[day]?h('div',{className:'empty'},'Loading real fixtures…'):
- groups.length?h('div',{className:'grid'},groups.map(function(group){var L=group.league;return h('section',{className:'lg',key:L.id},h('div',{className:'lh'},h('span',{className:'fl'}),h('b',null,L.n),h('small',null,L.c)),group.matches.map(function(m,i){var id=day+L.id+i;return h(Match,{key:id,m:m,open:open===id,onClick:function(){setOpen(open===id?null:id)}})}))})):
- h('div',{className:'empty'},'No matches found for this date or league. Choose another day.')),
- h('footer',null,h('div',{className:'wrap'},h('span',null,'SCORELY · Every Match. Every Moment.'),h('a',{href:'https://sportscore.com/',target:'_blank',rel:'noopener noreferrer',style:{color:'var(--mut)'}},'Powered by SportScore'))))
+  h('header',null,h('div',{className:'wrap hb'},h(Logo),
+   h('button',{className:'burger','aria-label':'Menu','aria-expanded':menu,onClick:function(){setMenu(!menu)}},'☰'),
+   h('nav',{className:menu?'open':'','aria-label':'Main'},['Scores','Fixtures','Tables','News','Teams'].map(function(x,i){return h('a',{key:x,href:'#'+x.toLowerCase(),className:i===0?'on':''},x)})))),
+  h('main',{className:'wrap'},
+   h('section',{className:'hero'},h('h1',null,'Every Match. Every Moment.'),h('p',null,'Live scores, fixtures and results from the biggest leagues in world football.')),
+   h('section',{'aria-label':'Live matches'},
+    h('div',{className:'sh'},h('span',{className:'dot'}),h('h2',null,'Live now'),h('small',{style:{color:'var(--mut)'}},liveList.length+' matches')),
+    liveCards.length?h('div',{className:'live'},liveCards):h('div',{className:'empty'},loading?'Checking live matches…':'No live matches reported right now.')),
+   h('section',{className:'sh',style:{marginTop:30}},h('h2',null,'Matches'),h('small',{style:{color:'var(--mut)',marginLeft:'auto'}},'Data refreshes every 60 seconds')),
+   h('div',{className:'bar'},
+    h('div',{className:'tabs',role:'tablist'},dayButtons),
+    h('div',{className:'chips'},filterButtons)),
+   matchContent),
+  h('footer',null,h('div',{className:'wrap'},h('span',null,'SCORELY · Every Match. Every Moment.'),h('a',{href:'https://sportscore.com/',target:'_blank',rel:'noopener noreferrer',style:{color:'var(--mut)'}},'Powered by SportScore'))))
 }
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 })();
