@@ -71,6 +71,7 @@ footer .wrap{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;
  nav.open{display:flex}.burger{display:grid;place-items:center}
  .tabs{width:100%}.tabs button{flex:1;padding:9px 6px}
 }
+.api-note{color:var(--mut)}
 </style>
 </head>
 <body>
@@ -80,102 +81,95 @@ footer .wrap{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;
 <script>
 (function(){
 var h=React.createElement,useState=React.useState,useEffect=React.useEffect;
+var API='https://sportscore.com/api/v1/fixtures/?sport=football&limit=200';
 var LEAGUES=[
-{id:'epl',n:'Premier League',c:'England'},
-{id:'liga',n:'La Liga',c:'Spain'},
-{id:'sa',n:'Serie A',c:'Italy'},
-{id:'bl',n:'Bundesliga',c:'Germany'},
-{id:'l1',n:'Ligue 1',c:'France'},
-{id:'ucl',n:'Champions League',c:'Europe'}
+{id:'epl',n:'Premier League',c:'England',keys:['premier league','english premier league']},
+{id:'liga',n:'La Liga',c:'Spain',keys:['la liga','laliga','primera division']},
+{id:'sa',n:'Serie A',c:'Italy',keys:['serie a','italian serie a']},
+{id:'bl',n:'Bundesliga',c:'Germany',keys:['bundesliga','german bundesliga']},
+{id:'l1',n:'Ligue 1',c:'France',keys:['ligue 1','ligue1']},
+{id:'ucl',n:'Champions League',c:'Europe',keys:['champions league','uefa champions league']}
 ];
-// [home, away, homeGoals, awayGoals, status] status: 'FT' | 'HT' | minute number (live) | 'HH:MM' kickoff
-var D={
-y:{
- epl:[['Newcastle United','Brighton',2,1,'FT'],['Aston Villa','West Ham',3,0,'FT']],
- liga:[['Real Sociedad','Sevilla',1,1,'FT']],
- sa:[['Napoli','Fiorentina',2,0,'FT'],['Torino','Lazio',0,1,'FT']],
- bl:[['Union Berlin','Freiburg',1,2,'FT']],
- l1:[['Lille','Nice',2,2,'FT']]
-},
-t:{
- epl:[['Arsenal','Chelsea',1,1,63],['Liverpool','Manchester City',2,2,'HT'],['Tottenham','Everton','12:30'],['Manchester United','Brentford','15:00'],['Fulham','Wolves','15:00']],
- liga:[['Real Madrid','Valencia',2,0,71],['Barcelona','Athletic Club','21:00'],['Atlético Madrid','Villarreal','18:30']],
- sa:[['Inter','AC Milan',1,0,38],['Juventus','Roma','20:45'],['Atalanta','Bologna','18:00']],
- bl:[['Bayern Munich','Borussia Dortmund',3,1,'FT'],['Bayer Leverkusen','RB Leipzig','18:30'],['Eintracht Frankfurt','Stuttgart','15:30']],
- l1:[['Paris Saint-Germain','Marseille','21:00'],['Monaco','Lyon','17:00']],
- ucl:[]
-},
-n:{
- epl:[['Crystal Palace','Manchester United','14:00'],['Nottingham Forest','Liverpool','16:30']],
- liga:[['Girona','Real Betis','16:15'],['Celta Vigo','Getafe','18:30']],
- sa:[['Lazio','Napoli','20:45'],['Como','Genoa','15:00']],
- bl:[['Werder Bremen','Wolfsburg','17:30'],['Hoffenheim','Mainz','15:30']],
- l1:[['Rennes','Lens','20:45']]
-}};
-Object.keys(D).forEach(function(d){Object.keys(D[d]).forEach(function(l){D[d][l]=D[d][l].map(function(m){return m.length===3?[m[0],m[1],null,null,m[2]]:m})})});
-var DAYS=[['y','Yesterday','Fri 13 Nov'],['t','Today','Sat 14 Nov'],['n','Tomorrow','Sun 15 Nov']];
-var NAV=['Scores','Fixtures','Tables','News','Teams'];
+function utcDate(offset){var d=new Date();d.setUTCHours(12,0,0,0);d.setUTCDate(d.getUTCDate()+offset);return d.toISOString().slice(0,10)}
+function dateLabel(offset){var d=new Date(utcDate(offset)+'T12:00:00Z');return d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'})}
+var DAYS=[{id:'y',label:'Yesterday',offset:-1},{id:'t',label:'Today',offset:0},{id:'n',label:'Tomorrow',offset:1}];
+function norm(v){return String(v==null?'':v).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function teamName(v){if(typeof v==='string')return v;if(v&&typeof v==='object')return v.name||v.title||v.short_name||v.shortName||'TBD';return 'TBD'}
+function score(v){if(v===null||v===undefined||v==='')return null;var n=Number(v);return Number.isFinite(n)?n:null}
+function compName(m){var c=m.competition||m.league||m.tournament||m.competition_name||m.league_name||'';if(c&&typeof c==='object')c=c.name||c.title||c.slug||'';return String(c||'Other competitions')}
+function leagueFor(name){var q=norm(name);for(var i=0;i<LEAGUES.length;i++){if(LEAGUES[i].keys.some(function(k){return q.indexOf(norm(k))!==-1||norm(k).indexOf(q)!==-1&&q.length>5}))return LEAGUES[i]}return {id:'other-'+q.replace(/\s+/g,'-'),n:name||'Other competitions',c:'Football'}}
+function matchStatus(m){
+ var s=norm(m.status||m.state||'');
+ var t=String(m.status_text||m.statusText||m.minute||'');
+ if(s.indexOf('live')!==-1||s==='in play'||s==='1h'||s==='2h'||s==='ht'||s==='half time'||s==='extra time'||s==='penalties')return {kind:'live',label:t|| (s==='ht'?'HT':'LIVE')};
+ if(s==='ht'||s.indexOf('half time')!==-1)return {kind:'live',label:'HT'};
+ if(s==='finished'||s==='ft'||s==='full time'||s==='aet'||s==='pens'||s==='after extra time')return {kind:'finished',label:t||'FT'};
+ if(s.indexOf('postpon')!==-1)return {kind:'other',label:'Postponed'};
+ if(s.indexOf('cancel')!==-1)return {kind:'other',label:'Cancelled'};
+ if(s.indexOf('abandon')!==-1)return {kind:'other',label:'Abandoned'};
+ return {kind:'upcoming',label:t||''};
+}
+function kickoff(m){
+ var raw=m.time||m.date||m.datetime||m.kickoff||m.start_time||m.startTime;
+ if(!raw)return '';
+ var d=new Date(raw);if(Number.isNaN(d.getTime()))return '';
+ return d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+function normalizeMatch(m){
+ if(!m||typeof m!=='object')return null;
+ var home=teamName(m.home||m.home_team||m.homeTeam),away=teamName(m.away||m.away_team||m.awayTeam);
+ if(home==='TBD'&&away==='TBD')return null;
+ var hs=score(m.home_score!==undefined?m.home_score:(m.homeScore!==undefined?m.homeScore:(m.home&&m.home.score)));
+ var as=score(m.away_score!==undefined?m.away_score:(m.awayScore!==undefined?m.awayScore:(m.away&&m.away.score)));
+ var st=matchStatus(m),comp=compName(m);
+ return {home:home,away:away,hs:hs,as:as,status:st,competition:comp,league:leagueFor(comp),time:kickoff(m),slug:m.slug||'',homeLogo:m.home_logo||'',awayLogo:m.away_logo||'',raw:m};
+}
+function extract(payload){
+ if(Array.isArray(payload))return payload;
+ if(!payload||typeof payload!=='object')return [];
+ return payload.matches||payload.fixtures||payload.results||payload.data||payload.events||[];
+}
 function hue(s){var x=0;for(var i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))%360;return x}
 function Crest(p){return h('span',{className:'cr',style:{background:'hsl('+hue(p.n)+',45%,36%)'},'aria-hidden':'true'},p.n.replace(/[^A-Za-z ]/g,'').slice(0,3).toUpperCase())}
 function Logo(){return h('a',{className:'logo',href:'#top','aria-label':'SCORELY home'},
- h('svg',{width:44,height:40,viewBox:'0 0 44 40','aria-hidden':'true'},
-  h('g',{fill:'none',stroke:'#55e61c',strokeWidth:2.2,strokeLinecap:'round',strokeLinejoin:'round'},
-   h('circle',{cx:35,cy:7,r:5.5}),
-   h('path',{d:'M31 11C28 13 26 15 24 17'}),
-   h('path',{d:'M14 8c2-2 4-1 4 1l-1 4 5 2 4-2'}),
-   h('path',{d:'M17 13l-3 8 4 4-3 9'}),
-   h('path',{d:'M14 21l-4 7M18 25l7 4 2 8'}),
-   h('path',{d:'M6 15l8-2'}),
-   h('path',{d:'M18 17l9 -3',strokeWidth:3}))),
- h('b',null,'SCORELY'))}
-function status(s){
- if(s==='FT')return h('span',{className:'st'},'FT');
- if(s==='HT')return h('span',{className:'st l'},'HT');
- if(typeof s==='number')return h('span',{className:'st l'},s+"'");
- return h('span',{className:'st'},s)}
-function isLive(m){return m[4]==='HT'||typeof m[4]==='number'}
+ h('svg',{width:44,height:40,viewBox:'0 0 44 40','aria-hidden':'true'},h('g',{fill:'none',stroke:'#55e61c',strokeWidth:2.2,strokeLinecap:'round',strokeLinejoin:'round'},h('circle',{cx:35,cy:7,r:5.5}),h('path',{d:'M31 11C28 13 26 15 24 17'}),h('path',{d:'M14 8c2-2 4-1 4 1l-1 4 5 2 4-2'}),h('path',{d:'M17 13l-3 8 4 4-3 9'}),h('path',{d:'M14 21l-4 7M18 25l7 4 2 8'}),h('path',{d:'M6 15l8-2'}),h('path',{d:'M18 17l9 -3',strokeWidth:3}))),h('b',null,'SCORELY'))}
+function Status(p){var s=p.m.status;return h('span',{className:'st'+(s.kind==='live'?' l':'')},s.label||p.m.time||'—')}
 function Match(p){
- var m=p.m,has=m.length===5&&typeof m[2]==='number',played=has;
- var hw=played&&m[2]>m[3],aw=played&&m[3]>m[2];
- var det=p.open&&h('div',{className:'det'},isLive(m)?'Live now · lineups, stats and commentary coming soon.':m[4]==='FT'?'Full time · match report coming soon.':'Kickoff '+m[4]+' (local time) · preview coming soon.');
- return h(React.Fragment,null,
-  h('button',{className:'m','aria-expanded':!!p.open,onClick:p.onClick},
-   status(m[4]),
-   h('span',{className:'tm'},h('div',null,h(Crest,{n:m[0]}),h('span',{className:hw||!played?'w':'lo'},m[0])),h('div',null,h(Crest,{n:m[1]}),h('span',{className:aw||!played?'w':'lo'},m[1]))),
-   h('span',{className:'sc'},played?h('span',{className:hw?'w':'lo'},m[2]):h('span',{className:'lo'},'–'),played?h('span',{className:aw?'w':'lo'},m[3]):h('span',{className:'lo'},'–'))),
-  det)}
+ var m=p.m,played=m.hs!==null&&m.as!==null,hw=played&&m.hs>m.as,aw=played&&m.as>m.hs;
+ var detail=p.open?h('div',{className:'det'},m.status.kind==='live'?'Live match · scores and status are supplied by SportScore.':m.status.kind==='finished'?'Full time · final score supplied by SportScore.':(m.time?'Kickoff '+m.time+' (your local time).':'Match schedule supplied by SportScore.')):null;
+ return h(React.Fragment,null,h('button',{className:'m','aria-expanded':!!p.open,onClick:p.onClick},
+ h(Status,{m:m}),h('span',{className:'tm'},h('div',null,h(Crest,{n:m.home}),h('span',{className:hw||!played?'w':'lo'},m.home)),h('div',null,h(Crest,{n:m.away}),h('span',{className:aw||!played?'w':'lo'},m.away))),
+ h('span',{className:'sc'},h('span',{className:hw?'w':'lo'},played?m.hs:'–'),h('span',{className:aw?'w':'lo'},played?m.as:'–'))),detail)
+}
 function App(){
- var s=useState('t'),day=s[0],setDay=s[1];
- var f=useState('all'),fl=f[0],setFl=f[1];
- var o=useState(null),open=o[0],setOpen=o[1];
- var n=useState(false),menu=n[0],setMenu=n[1];
- var k=useState(0),tick=k[0],setTick=k[1];
- useEffect(function(){var t=setInterval(function(){setTick(function(x){return x+1})},60000);return function(){clearInterval(t)}},[]);
- function mm(x){return typeof x==='number'?x+tick:x}
- var data=D[day];
- var liveList=[];
- LEAGUES.forEach(function(L){(D.t[L.id]||[]).forEach(function(m){if(isLive(m))liveList.push([L,m.slice(0,4).concat([mm(m[4])])])})});
- var groups=LEAGUES.filter(function(L){return(data[L.id]||[]).length&&(fl==='all'||fl===L.id)});
+ var a=useState('t'),day=a[0],setDay=a[1],b=useState('all'),filter=b[0],setFilter=b[1],c=useState(null),open=c[0],setOpen=c[1],d=useState(false),menu=d[0],setMenu=d[1],e=useState({}),data=e[0],setData=e[1],f=useState(false),loading=f[0],setLoading=f[1],g=useState(''),error=g[0],setError=g[1],j=useState(0),refresh=j[1];
+ function load(){
+  setLoading(true);setError('');
+  Promise.all(DAYS.map(function(dayInfo){var date=utcDate(dayInfo.offset);return fetch(API+'&date='+encodeURIComponent(date),{headers:{Accept:'application/json'}}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(json){var rows=extract(json);if(!Array.isArray(rows))throw new Error('Unexpected API response');return {id:dayInfo.id,matches:rows.map(normalizeMatch).filter(Boolean)}})}))
+  .then(function(results){var next={};results.forEach(function(r){next[r.id]=r.matches});setData(next);setError('');setLoading(false);refresh(function(x){return x+1})})
+  .catch(function(err){setError('Could not load fixtures from SportScore. Please try again shortly.');setLoading(false);console.error('SCORELY fixtures error:',err)})
+ }
+ useEffect(function(){load();var timer=setInterval(load,60000);return function(){clearInterval(timer)}},[]);
+ var matches=data[day]||[];
+ var liveList=[];DAYS.forEach(function(di){(data[di.id]||[]).forEach(function(m){if(m.status.kind==='live')liveList.push(m)})});
+ var grouped={};matches.forEach(function(m){var L=m.league;if(!grouped[L.id])grouped[L.id]={league:L,matches:[]};grouped[L.id].matches.push(m)});
+ var groups=Object.keys(grouped).map(function(k){return grouped[k]}).filter(function(g){return filter==='all'||filter===g.league.id}).sort(function(x,y){return x.league.n.localeCompare(y.league.n)});
+ var leagueFilters=LEAGUES.filter(function(L){return matches.some(function(m){return m.league.id===L.id})});
+ var allFilters=[{id:'all',n:'All leagues'}].concat(leagueFilters);
  return h('div',{id:'top'},
-  h('header',null,h('div',{className:'wrap hb'},h(Logo),
-   h('button',{className:'burger','aria-label':'Menu','aria-expanded':menu,onClick:function(){setMenu(!menu)}},'☰'),
-   h('nav',{className:menu?'open':'','aria-label':'Main'},NAV.map(function(x,i){return h('a',{key:x,href:'#'+x.toLowerCase(),className:i===0?'on':''},x)})))),
-  h('main',{className:'wrap'},
-   h('section',{className:'hero'},h('h1',null,'Every Match. Every Moment.'),h('p',null,'Live scores, fixtures and results from the biggest leagues in world football.')),
-   h('section',{'aria-label':'Live matches'},
-    h('div',{className:'sh'},h('span',{className:'dot'}),h('h2',null,'Live now'),h('small',{style:{color:'var(--mut)'}},liveList.length+' matches')),
-    h('div',{className:'live'},liveList.map(function(x,i){var L=x[0],m=x[1];return h('div',{className:'lc',key:i},
-     h('div',{style:{display:'flex',justifyContent:'space-between'}},h('small',null,L.n),h('span',{className:'min'},m[4]==='HT'?'HT':m[4]+"'")),
-     [0,1].map(function(j){return h('div',{className:'lt',key:j},h('span',null,h(Crest,{n:m[j]}),m[j]),h('b',null,m[2+j]))}))}))),
-   h('section',{className:'sh',style:{marginTop:30}},h('h2',null,'Matches')),
-   h('div',{className:'bar'},
-    h('div',{className:'tabs',role:'tablist'},DAYS.map(function(d){return h('button',{key:d[0],role:'tab','aria-selected':day===d[0],className:day===d[0]?'on':'',onClick:function(){setDay(d[0]);setOpen(null)}},d[1],h('small',null,d[2]))})),
-    h('div',{className:'chips'},[{id:'all',n:'All leagues'}].concat(LEAGUES).map(function(L){return h('button',{key:L.id,className:'chip'+(fl===L.id?' on':''),onClick:function(){setFl(L.id)}},L.n)}))),
-   groups.length?h('div',{className:'grid'},groups.map(function(L){return h('section',{className:'lg',key:L.id},
-    h('div',{className:'lh'},h('span',{className:'fl'}),h('b',null,L.n),h('small',null,L.c)),
-    data[L.id].map(function(m,i){var id=day+L.id+i,mm2=m.length===5?m.slice(0,4).concat([mm(m[4])]):m;return h(Match,{key:id,m:mm2,open:open===id,onClick:function(){setOpen(open===id?null:id)}})}))})):
-   h('div',{className:'empty'},'No matches for this league on this day. Try another day or choose All leagues.')),
-  h('footer',null,h('div',{className:'wrap'},h('span',null,'SCORELY · Every Match. Every Moment.'),h('span',null,'Sample data for design preview'))))}
+ h('header',null,h('div',{className:'wrap hb'},h(Logo),h('button',{className:'burger','aria-label':'Menu','aria-expanded':menu,onClick:function(){setMenu(!menu)}},'☰'),h('nav',{className:menu?'open':'','aria-label':'Main'},['Scores','Fixtures','Tables','News','Teams'].map(function(x,i){return h('a',{key:x,href:'#'+x.toLowerCase(),className:i===0?'on':''},x)})))),
+ h('main',{className:'wrap'},h('section',{className:'hero'},h('h1',null,'Every Match. Every Moment.'),h('p',null,'Live scores, fixtures and results from the biggest leagues in world football.')),
+ h('section',{'aria-label':'Live matches'},h('div',{className:'sh'},h('span',{className:'dot'}),h('h2',null,'Live now'),h('small',{style:{color:'var(--mut)'}},liveList.length+' matches')),
+ liveList.length?h('div',{className:'live'},liveList.map(function(m,i){return h('div',{className:'lc',key:(m.slug||m.home+m.away)+i},h('div',{style:{display:'flex',justifyContent:'space-between'}},h('small',null,m.competition),h('span',{className:'min'},m.status.label||'LIVE')),[0,1].map(function(side){return h('div',{className:'lt',key:side},h('span',null,h(Crest,{n:side?m.away:m.home}),side?m.away:m.home),h('b',null,(side?m.as:m.hs)===null?'–':side?m.as:m.hs))})))}):h('div',{className:'empty'},loading?'Checking live matches…':'No live matches reported right now.')),
+ h('section',{className:'sh',style:{marginTop:30}},h('h2',null,'Matches'),h('small',{style:{color:'var(--mut)',marginLeft:'auto'}},'Data refreshes every 60 seconds')),
+ h('div',{className:'bar'},h('div',{className:'tabs',role:'tablist'},DAYS.map(function(di){return h('button',{key:di.id,role:'tab','aria-selected':day===di.id,className:day===di.id?'on':'',onClick:function(){setDay(di.id);setOpen(null);setFilter('all')}},di.label,h('small',null,dateLabel(di.offset)))})),
+ h('div',{className:'chips'},allFilters.map(function(L){return h('button',{key:L.id,className:'chip'+(filter===L.id?' on':''),onClick:function(){setFilter(L.id)}},L.n)}))),
+ error?h('div',{className:'empty'},error,h('div',{style:{marginTop:14}},h('button',{className:'chip on',onClick:load},'Retry'))):
+ loading&&!data[day]?h('div',{className:'empty'},'Loading real fixtures…'):
+ groups.length?h('div',{className:'grid'},groups.map(function(group){var L=group.league;return h('section',{className:'lg',key:L.id},h('div',{className:'lh'},h('span',{className:'fl'}),h('b',null,L.n),h('small',null,L.c)),group.matches.map(function(m,i){var id=day+L.id+i;return h(Match,{key:id,m:m,open:open===id,onClick:function(){setOpen(open===id?null:id)}})}))})):
+ h('div',{className:'empty'},'No matches found for this date or league. Choose another day.')),
+ h('footer',null,h('div',{className:'wrap'},h('span',null,'SCORELY · Every Match. Every Moment.'),h('a',{href:'https://sportscore.com/',target:'_blank',rel:'noopener noreferrer',style:{color:'var(--mut)'}},'Powered by SportScore'))))
+}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 })();
 </script>
