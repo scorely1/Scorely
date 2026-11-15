@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SCORELY – Every Match. Every Moment.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;0,700;1,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#081426;--bg2:#0d1d36;--card:#10223d;--line:#1d3558;--tx:#fff;--mut:#8da2c0;--g:#55e61c;--gd:#2f9e0c;--red:#ff4d4d;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Archivo,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,a:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:0;z-index:20;background:rgba(8,20,38,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hb{display:flex;align-items:center;gap:20px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--tx)}
+.logo b{font-style:italic;font-weight:800;font-size:25px;letter-spacing:.5px}
+nav{display:flex;gap:4px;margin-left:auto}
+nav a{color:var(--mut);text-decoration:none;font-weight:600;font-size:14px;padding:8px 12px;border-radius:8px}
+nav a:hover,nav a.on{color:var(--tx);background:var(--card)}
+nav a.on{box-shadow:inset 0 -2px 0 var(--g)}
+.burger{display:none;margin-left:auto;width:40px;height:40px;border-radius:8px;border:1px solid var(--line)}
+.hero{padding:34px 0 22px}
+.hero h1{margin:0;font-style:italic;font-weight:800;font-size:clamp(34px,7vw,64px);line-height:1;letter-spacing:-.5px}
+.hero p{margin:10px 0 0;color:var(--mut);max-width:48ch;line-height:1.5}
+.sh{display:flex;align-items:center;gap:10px;margin:26px 0 12px}
+.sh h2{margin:0;font-size:18px;font-weight:700}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--red);animation:p 1.4s infinite}
+@keyframes p{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.dot{animation:none}}
+.live{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}
+.lc{flex:0 0 280px;scroll-snap-align:start;background:linear-gradient(160deg,#143056,var(--card));border:1px solid var(--line);border-top:3px solid var(--g);border-radius:12px;padding:14px}
+.lc small{color:var(--mut);font-size:12px}
+.lt{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px}
+.lt span{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.lt b{font-size:22px;font-weight:800}
+.min{color:var(--g);font-weight:700;font-size:12px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 14px}
+.tabs{display:flex;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.tabs button{padding:9px 16px;border-radius:9px;font-weight:700;font-size:14px;color:var(--mut);text-align:center}
+.tabs button small{display:block;font-weight:400;font-size:11px}
+.tabs button.on{background:var(--g);color:#06210a}
+.chips{display:flex;gap:8px;overflow-x:auto;width:100%;padding:2px 0 6px}
+.chip{flex:none;padding:7px 14px;border-radius:99px;border:1px solid var(--line);color:var(--mut);font-size:13px;font-weight:600;white-space:nowrap}
+.chip.on{border-color:var(--g);color:var(--g);background:rgba(85,230,28,.08)}
+.grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:860px){.grid{grid-template-columns:1fr 1fr}}
+.lg{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.lh{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--line)}
+.lh b{font-size:15px}.lh small{color:var(--mut);font-size:12px;margin-left:auto}
+.fl{width:6px;height:22px;border-radius:3px;background:var(--g)}
+.m{display:grid;grid-template-columns:58px 1fr 34px;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.m:last-child{border-bottom:0}
+.m:hover{background:rgba(255,255,255,.03)}
+.st{font-size:12px;font-weight:700;color:var(--mut)}
+.st.l{color:var(--g)}
+.tm{display:flex;flex-direction:column;gap:7px}
+.tm div{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600}
+.cr{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:8px;font-weight:700;color:#fff;flex:none}
+.sc{display:flex;flex-direction:column;gap:7px;text-align:right;font-weight:800;font-size:15px}
+.w{color:var(--tx)}.lo{color:var(--mut);font-weight:600}
+.empty{padding:40px 16px;text-align:center;color:var(--mut);border:1px dashed var(--line);border-radius:14px}
+.det{grid-column:1/-1;padding:10px 14px 14px 80px;color:var(--mut);font-size:13px;background:var(--bg2);border-bottom:1px solid var(--line)}
+footer{margin-top:40px;border-top:1px solid var(--line);padding:24px 0 32px;color:var(--mut);font-size:13px}
+footer .wrap{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;align-items:center}
+@media(max-width:720px){
+ nav{display:none;position:absolute;top:64px;left:0;right:0;flex-direction:column;background:var(--bg);padding:10px 16px 16px;border-bottom:1px solid var(--line)}
+ nav.open{display:flex}.burger{display:grid;place-items:center}
+ .tabs{width:100%}.tabs button{flex:1;padding:9px 6px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script>
+(function(){
+var h=React.createElement,useState=React.useState,useEffect=React.useEffect;
+var LEAGUES=[
+{id:'epl',n:'Premier League',c:'England'},
+{id:'liga',n:'La Liga',c:'Spain'},
+{id:'sa',n:'Serie A',c:'Italy'},
+{id:'bl',n:'Bundesliga',c:'Germany'},
+{id:'l1',n:'Ligue 1',c:'France'},
+{id:'ucl',n:'Champions League',c:'Europe'}
+];
+// [home, away, homeGoals, awayGoals, status] status: 'FT' | 'HT' | minute number (live) | 'HH:MM' kickoff
+var D={
+y:{
+ epl:[['Newcastle United','Brighton',2,1,'FT'],['Aston Villa','West Ham',3,0,'FT']],
+ liga:[['Real Sociedad','Sevilla',1,1,'FT']],
+ sa:[['Napoli','Fiorentina',2,0,'FT'],['Torino','Lazio',0,1,'FT']],
+ bl:[['Union Berlin','Freiburg',1,2,'FT']],
+ l1:[['Lille','Nice',2,2,'FT']]
+},
+t:{
+ epl:[['Arsenal','Chelsea',1,1,63],['Liverpool','Manchester City',2,2,'HT'],['Tottenham','Everton','12:30'],['Manchester United','Brentford','15:00'],['Fulham','Wolves','15:00']],
+ liga:[['Real Madrid','Valencia',2,0,71],['Barcelona','Athletic Club','21:00'],['Atlético Madrid','Villarreal','18:30']],
+ sa:[['Inter','AC Milan',1,0,38],['Juventus','Roma','20:45'],['Atalanta','Bologna','18:00']],
+ bl:[['Bayern Munich','Borussia Dortmund',3,1,'FT'],['Bayer Leverkusen','RB Leipzig','18:30'],['Eintracht Frankfurt','Stuttgart','15:30']],
+ l1:[['Paris Saint-Germain','Marseille','21:00'],['Monaco','Lyon','17:00']],
+ ucl:[]
+},
+n:{
+ epl:[['Crystal Palace','Manchester United','14:00'],['Nottingham Forest','Liverpool','16:30']],
+ liga:[['Girona','Real Betis','16:15'],['Celta Vigo','Getafe','18:30']],
+ sa:[['Lazio','Napoli','20:45'],['Como','Genoa','15:00']],
+ bl:[['Werder Bremen','Wolfsburg','17:30'],['Hoffenheim','Mainz','15:30']],
+ l1:[['Rennes','Lens','20:45']]
+}};
+Object.keys(D).forEach(function(d){Object.keys(D[d]).forEach(function(l){D[d][l]=D[d][l].map(function(m){return m.length===3?[m[0],m[1],null,null,m[2]]:m})})});
+var DAYS=[['y','Yesterday','Fri 13 Nov'],['t','Today','Sat 14 Nov'],['n','Tomorrow','Sun 15 Nov']];
+var NAV=['Scores','Fixtures','Tables','News','Teams'];
+function hue(s){var x=0;for(var i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))%360;return x}
+function Crest(p){return h('span',{className:'cr',style:{background:'hsl('+hue(p.n)+',45%,36%)'},'aria-hidden':'true'},p.n.replace(/[^A-Za-z ]/g,'').slice(0,3).toUpperCase())}
+function Logo(){return h('a',{className:'logo',href:'#top','aria-label':'SCORELY home'},
+ h('svg',{width:44,height:40,viewBox:'0 0 44 40','aria-hidden':'true'},
+  h('g',{fill:'none',stroke:'#55e61c',strokeWidth:2.2,strokeLinecap:'round',strokeLinejoin:'round'},
+   h('circle',{cx:35,cy:7,r:5.5}),
+   h('path',{d:'M31 11C28 13 26 15 24 17'}),
+   h('path',{d:'M14 8c2-2 4-1 4 1l-1 4 5 2 4-2'}),
+   h('path',{d:'M17 13l-3 8 4 4-3 9'}),
+   h('path',{d:'M14 21l-4 7M18 25l7 4 2 8'}),
+   h('path',{d:'M6 15l8-2'}),
+   h('path',{d:'M18 17l9 -3',strokeWidth:3}))),
+ h('b',null,'SCORELY'))}
+function status(s){
+ if(s==='FT')return h('span',{className:'st'},'FT');
+ if(s==='HT')return h('span',{className:'st l'},'HT');
+ if(typeof s==='number')return h('span',{className:'st l'},s+"'");
+ return h('span',{className:'st'},s)}
+function isLive(m){return m[4]==='HT'||typeof m[4]==='number'}
+function Match(p){
+ var m=p.m,has=m.length===5&&typeof m[2]==='number',played=has;
+ var hw=played&&m[2]>m[3],aw=played&&m[3]>m[2];
+ var det=p.open&&h('div',{className:'det'},isLive(m)?'Live now · lineups, stats and commentary coming soon.':m[4]==='FT'?'Full time · match report coming soon.':'Kickoff '+m[4]+' (local time) · preview coming soon.');
+ return h(React.Fragment,null,
+  h('button',{className:'m','aria-expanded':!!p.open,onClick:p.onClick},
+   status(m[4]),
+   h('span',{className:'tm'},h('div',null,h(Crest,{n:m[0]}),h('span',{className:hw||!played?'w':'lo'},m[0])),h('div',null,h(Crest,{n:m[1]}),h('span',{className:aw||!played?'w':'lo'},m[1]))),
+   h('span',{className:'sc'},played?h('span',{className:hw?'w':'lo'},m[2]):h('span',{className:'lo'},'–'),played?h('span',{className:aw?'w':'lo'},m[3]):h('span',{className:'lo'},'–'))),
+  det)}
+function App(){
+ var s=useState('t'),day=s[0],setDay=s[1];
+ var f=useState('all'),fl=f[0],setFl=f[1];
+ var o=useState(null),open=o[0],setOpen=o[1];
+ var n=useState(false),menu=n[0],setMenu=n[1];
+ var k=useState(0),tick=k[0],setTick=k[1];
+ useEffect(function(){var t=setInterval(function(){setTick(function(x){return x+1})},60000);return function(){clearInterval(t)}},[]);
+ function mm(x){return typeof x==='number'?x+tick:x}
+ var data=D[day];
+ var liveList=[];
+ LEAGUES.forEach(function(L){(D.t[L.id]||[]).forEach(function(m){if(isLive(m))liveList.push([L,m.slice(0,4).concat([mm(m[4])])])})});
+ var groups=LEAGUES.filter(function(L){return(data[L.id]||[]).length&&(fl==='all'||fl===L.id)});
+ return h('div',{id:'top'},
+  h('header',null,h('div',{className:'wrap hb'},h(Logo),
+   h('button',{className:'burger','aria-label':'Menu','aria-expanded':menu,onClick:function(){setMenu(!menu)}},'☰'),
+   h('nav',{className:menu?'open':'','aria-label':'Main'},NAV.map(function(x,i){return h('a',{key:x,href:'#'+x.toLowerCase(),className:i===0?'on':''},x)})))),
+  h('main',{className:'wrap'},
+   h('section',{className:'hero'},h('h1',null,'Every Match. Every Moment.'),h('p',null,'Live scores, fixtures and results from the biggest leagues in world football.')),
+   h('section',{'aria-label':'Live matches'},
+    h('div',{className:'sh'},h('span',{className:'dot'}),h('h2',null,'Live now'),h('small',{style:{color:'var(--mut)'}},liveList.length+' matches')),
+    h('div',{className:'live'},liveList.map(function(x,i){var L=x[0],m=x[1];return h('div',{className:'lc',key:i},
+     h('div',{style:{display:'flex',justifyContent:'space-between'}},h('small',null,L.n),h('span',{className:'min'},m[4]==='HT'?'HT':m[4]+"'")),
+     [0,1].map(function(j){return h('div',{className:'lt',key:j},h('span',null,h(Crest,{n:m[j]}),m[j]),h('b',null,m[2+j]))}))}))),
+   h('section',{className:'sh',style:{marginTop:30}},h('h2',null,'Matches')),
+   h('div',{className:'bar'},
+    h('div',{className:'tabs',role:'tablist'},DAYS.map(function(d){return h('button',{key:d[0],role:'tab','aria-selected':day===d[0],className:day===d[0]?'on':'',onClick:function(){setDay(d[0]);setOpen(null)}},d[1],h('small',null,d[2]))})),
+    h('div',{className:'chips'},[{id:'all',n:'All leagues'}].concat(LEAGUES).map(function(L){return h('button',{key:L.id,className:'chip'+(fl===L.id?' on':''),onClick:function(){setFl(L.id)}},L.n)}))),
+   groups.length?h('div',{className:'grid'},groups.map(function(L){return h('section',{className:'lg',key:L.id},
+    h('div',{className:'lh'},h('span',{className:'fl'}),h('b',null,L.n),h('small',null,L.c)),
+    data[L.id].map(function(m,i){var id=day+L.id+i,mm2=m.length===5?m.slice(0,4).concat([mm(m[4])]):m;return h(Match,{key:id,m:mm2,open:open===id,onClick:function(){setOpen(open===id?null:id)}})}))})):
+   h('div',{className:'empty'},'No matches for this league on this day. Try another day or choose All leagues.')),
+  h('footer',null,h('div',{className:'wrap'},h('span',null,'SCORELY · Every Match. Every Moment.'),h('span',null,'Sample data for design preview'))))}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
+</body>
+</html>
